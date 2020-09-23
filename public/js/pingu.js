@@ -12,6 +12,8 @@ function Pingu(name, x, y, color){
     this.up = false;
     this.down = false;
 
+    this.id = 0;
+
 
     this.move = function move(direction){
         switch(direction){
@@ -63,6 +65,8 @@ function Pingu(name, x, y, color){
     this.draw = function draw(){
         ctx.fillStyle = "red";
         ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.font = "20px Arial";
+        ctx.fillText(this.name, this.x - 25, this.y - 10);
     }
 
 }
