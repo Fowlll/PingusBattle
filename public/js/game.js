@@ -4,13 +4,12 @@ let ctx = canvas.getContext("2d");
 ctx.fillStyle = "black";
 ctx.fillRect(0, 0, 1280, 720);
 
-let pingus = [];
+let Objects = [];
 
-let player = new Pingu("", 100, 100, "red");
+let player = new Pingu("", 100, 100, "yellow");
 
 socket.on("getId", (id) =>{
     player.id = id;
-    console.log(player);
 });
 
 socket.on("askPseudo", () =>{
@@ -18,17 +17,31 @@ socket.on("askPseudo", () =>{
     socket.emit("givePseudo", pseudo);
 });
 
-socket.on("revealPosition", (allPingus) =>{
-    for(let i = 0; i < allPingus.length; i++){
-        if(pingus.find(p => p.id == allPingus[i].id) != undefined){
-            pingus.find(p => p.id == allPingus[i].id).x = allPingus[i].x;
-            pingus.find(p => p.id == allPingus[i].id).y = allPingus[i].y;
-            pingus.find(p => p.id == allPingus[i].id).name = allPingus[i].name;
-            console.log("Mise à jour des positions des autres");
+socket.on("revealPosition", (allObjects) =>{
+    for(let i = 0; i < allObjects.length; i++){
+        if(Objects.find(p => p.id == allObjects[i].id) != undefined){
+            if(Objects[i].id == player.id){
+                player.x = allObjects[i].x;
+                player.y = allObjects[i].y;
+                player.name = allObjects[i].name;
+                player.color = allObjects[i].color;
+            }else{
+                Objects.find(p => p.id == allObjects[i].id).x = allObjects[i].x;
+                Objects.find(p => p.id == allObjects[i].id).y = allObjects[i].y;
+                Objects.find(p => p.id == allObjects[i].id).name = allObjects[i].name;
+                Objects.find(p => p.id == allObjects[i].id).color = allObjects[i].color;
+            }
         }else{
-            let newPlayer = new Pingu(allPingus[i].name, allPingus[i].x, allPingus[i].y, allPingus[i].color);
-            newPlayer.id = allPingus[i].id;
-            pingus.push(newPlayer);
+            let newObject;
+
+            if(allObjects[i].type == "pingu"){
+                newObject = new Pingu(allObjects[i].name, allObjects[i].x, allObjects[i].y, allObjects[i].color);
+            }else if(allObjects[i].type == "wall"){
+                newObject = new Wall(allObjects[i].x, allObjects[i].y);
+            }
+
+            newObject.id = allObjects[i].id;
+            Objects.push(newObject);
         }
     }
 });
@@ -36,12 +49,12 @@ socket.on("revealPosition", (allPingus) =>{
 socket.on("PlayerJoin", (newPlayer) =>{
     let joinPingu = new Pingu(newPlayer.name, newPlayer.x, newPlayer.y, newPlayer.color);
     joinPingu.id = newPlayer.id;
-    pingus.push(joinPingu);
-    console.log(joinPingu.name + "à rejoint la game !");
+    Objects.push(joinPingu);
+    console.log(newPlayer.name + "à rejoint la game !");
 });
 
 socket.on("PlayerQuit", (id) =>{
-    pingus.splice(pingus.indexOf(pingus.find(p => p.id == id)), 1);
+    Objects.splice(Objects.indexOf(Objects.find(p => p.id == id)), 1);
 });
 
 window.setInterval(function(){
@@ -56,14 +69,15 @@ window.setInterval(function(){
     player.refresh();
 
     
-    // Refresh pingus
-    for(let i = 0; i < pingus.length; i++){
-        pingus[i].refresh();
+    // Refresh Objects
+    for(let i = 0; i < Objects.length; i++){
+        if(Objects[i].id != player.id){
+            Objects[i].refresh();
+        }
     }
 
     // Emit position
     if(player != undefined){
-        console.log("Envoie de position au serveur");
         socket.emit("position", player);
     }
 
